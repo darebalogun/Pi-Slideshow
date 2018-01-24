@@ -17,9 +17,9 @@ import java.util.stream.*;
 /**
  * Creates a JFrame and plays a slideshow of photos from a preset folder
  * 
- * Default slideshow frequency is 10 seconds
+ * Default slideshow frequency is 10 seconds. Can be modified via the first command-line argument
  * 
- * Default folder refresh frequency is 2 minutes
+ * Default folder refresh frequency is 2 minutes. Can be modified via the second command-line argument
  * 
  * @author Oludare Balogun
  * @version Jan 23 2018
@@ -29,7 +29,7 @@ public class Slideshow extends JFrame {
 
     private static ArrayList<Icon> icons = new ArrayList<Icon>();
     private static ArrayList<Icon> newIcons = new ArrayList<Icon>();
-    private static Path folder = Paths.get("W:/Discovery Centre/Discovery Centre IT Support Analyst/Pi Project/TestPhotos");
+    private static Path folder = Paths.get("/home/pi/gdrive/TVSlides");
     private static DirectoryStream<Path> folderStream;
     private static int currSlide;
     private static JLabel slidesLabel = new JLabel();
@@ -67,7 +67,7 @@ public class Slideshow extends JFrame {
     /**
      * Starts slideshow of images from preset folder. Each image is shown for 10 seconds and images are shown in the order that they are put into the arraylist
      * 
-     * Folder must have at least one image
+     * Folder must have at least one image or the program terminates with error printed to console
      */
     public void startSlideshow(){
       while(true) {
@@ -78,11 +78,11 @@ public class Slideshow extends JFrame {
             pack();
             TimeUnit.SECONDS.sleep(slideDelay);
           } else {
-            System.out.println("There are no image files in the path");
-            break;
+            System.err.println("There are no image files in the path");
+            System.exit(1);
           }
         } catch (InterruptedException e){
-          e.printStackTrace();
+          e.printStackTrace(System.out);
       }
       }
        }
@@ -106,41 +106,51 @@ public class Slideshow extends JFrame {
           currSlide = 0;
           TimeUnit.SECONDS.sleep(refreshDelay);
         } catch (InterruptedException e){
-          e.printStackTrace();
+          e.printStackTrace(System.out);
        }
       }
      }
     
     public static void main(String[] args) {
-        Slideshow slideshow = new Slideshow();
-       slideshow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-       slideshow.setLocationRelativeTo(null);
-       slideshow.setVisible(true);
-       
        if (args.length > 0){
            try {
            slideDelay = Integer.parseInt(args[0]);
            } catch (NumberFormatException e) {
+               e.printStackTrace(System.out);
            }
            
            if (args.length > 1){
                try {
                refreshDelay = Integer.parseInt(args[1]);
                } catch (NumberFormatException e) {
+                   e.printStackTrace(System.out);
                }
            }
-       }
+           
+           if (args.length > 2){
+               folder = Paths.get(args[2]);
+           }  
+       } 
+        
+       Slideshow slideshow = new Slideshow();
+       slideshow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+       slideshow.setLocationRelativeTo(null);
+       slideshow.setVisible(true);
        
        thread1 = new Thread(){
+         @Override
          public void run(){
            slideshow.startSlideshow();
          }
        };
        thread2 = new Thread(){
+         @Override
          public void run(){
            slideshow.updateFolder();
          }
        };
+       
+       // Start the slideshow and refresh the folder concurrently 
        thread1.start();
        thread2.start(); 
     }
