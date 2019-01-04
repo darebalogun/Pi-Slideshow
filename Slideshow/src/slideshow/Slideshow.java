@@ -1,5 +1,4 @@
 package slideshow;
-
 import java.awt.BorderLayout;
 import java.awt.Image;
 import java.nio.file.*;
@@ -22,19 +21,36 @@ import java.util.stream.*;
  * Default folder refresh frequency is 2 minutes
  * 
  * @author Oludare Balogun
- * @version Jan 23 2018
+ * @version Jan 4 2019
  * 
  **/
 public class Slideshow extends JFrame {
-
+	
+	//Store current photos in slideshow
     private static ArrayList<Icon> icons = new ArrayList<Icon>();
+    
+    //Store any new photos detected in google drive path
     private static ArrayList<Icon> newIcons = new ArrayList<Icon>();
+    
+    //Path to google drive folder
     private static Path folder = Paths.get("W:/Discovery Centre/Discovery Centre IT Support Analyst/Pi Project/TestPhotos");
+    
+    //Stream from folder path
     private static DirectoryStream<Path> folderStream;
+    
+    //Index of current slide in slideshow arraylist
     private static int currSlide;
+    
+    //JLabel for display
     private static JLabel slidesLabel = new JLabel();
+    
+    //Multithreading to handle fetching and display concurrently 
     private static Thread thread1, thread2;
+    
+    //Slideshow delay in seconds
     private static int slideDelay = 10;
+    
+    //Fecth delay in seconds
     private static int refreshDelay = 120;
     
     /**
@@ -44,9 +60,13 @@ public class Slideshow extends JFrame {
      */
     
     public Slideshow() {
+      
       currSlide = 0;
       setUndecorated(true);
-      setExtendedState(JFrame.MAXIMIZED_BOTH); //Create fullscreen undecorated JFrame
+      
+      //Create fullscreen undecorated JFrame
+      setExtendedState(JFrame.MAXIMIZED_BOTH);
+      
       // Add all files from folder into arraylist of icons
       try (Stream<Path> folderStream = Files.list(folder)) {
       for (Path file : (Iterable<Path>)folderStream::iterator){
@@ -57,6 +77,7 @@ public class Slideshow extends JFrame {
       } catch (IOException x) {
       System.err.println(x);
       }
+      
       //Centre the JLabel within the frame
       slidesLabel.setVerticalAlignment(JLabel.CENTER);
       slidesLabel.setHorizontalAlignment(JLabel.CENTER);
@@ -72,10 +93,16 @@ public class Slideshow extends JFrame {
     public void startSlideshow(){
       while(true) {
         try {
+        	
+          //Check to see that there is more than one photo in folder
           if (icons.size() > 0){
             slidesLabel.setIcon(icons.get(currSlide));
             currSlide = (currSlide + 1) % icons.size();
+            
+            //Display the photo
             pack();
+            
+            //Wait
             TimeUnit.SECONDS.sleep(slideDelay);
           } else {
             System.out.println("There are no image files in the path");
@@ -86,6 +113,7 @@ public class Slideshow extends JFrame {
       }
       }
        }
+    
     /**
      * Refreshes the preset folder every 2 minutes. Runs concurrently with the slideshow
      */
@@ -112,17 +140,24 @@ public class Slideshow extends JFrame {
      }
     
     public static void main(String[] args) {
-        Slideshow slideshow = new Slideshow();
+    	
+    	//Construct new slideshow and initialize
+       Slideshow slideshow = new Slideshow();
        slideshow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
        slideshow.setLocationRelativeTo(null);
        slideshow.setVisible(true);
        
+       //Check that slideshow delay was provided as a command line argument
        if (args.length > 0){
            try {
+        	
+        	//Update slideshow delay to command line argument
            slideDelay = Integer.parseInt(args[0]);
-           } catch (NumberFormatException e) {
+           } 
+           catch (NumberFormatException e) {
            }
            
+           //Check that refresh delay was provided in slideshow argument
            if (args.length > 1){
                try {
                refreshDelay = Integer.parseInt(args[1]);
@@ -131,16 +166,21 @@ public class Slideshow extends JFrame {
            }
        }
        
+       //Create thread1 to run slideshow loop
        thread1 = new Thread(){
          public void run(){
            slideshow.startSlideshow();
          }
        };
+       
+       //Create thread2 to run refresh loop
        thread2 = new Thread(){
          public void run(){
            slideshow.updateFolder();
          }
        };
+       
+       
        thread1.start();
        thread2.start(); 
     }
