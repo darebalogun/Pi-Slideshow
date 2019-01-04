@@ -1,4 +1,4 @@
-package slideshow;
+
 import java.awt.BorderLayout;
 import java.awt.Image;
 import java.nio.file.*;
